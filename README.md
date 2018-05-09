@@ -1,3 +1,7 @@
+# NOTICE:
+
+This is a fork of [znetstar/tor-router](https://github.com/znetstar/tor-router).
+
 # Tor Router
 
 *Tor Router* is a simple SOCKS5 forward proxy for distributing traffic across multiple instances of Tor. At startup Tor Router will run an arbitrary number of instances Tor an each request will be sent to a different instance in round-robin fashion. This can be used to increase anonymity, because each request will be sent on a different circut and will most likely use a different exit-node, and also to increase performance since outbound traffic is now split across several instances of Tor.
