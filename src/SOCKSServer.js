@@ -1,4 +1,4 @@
-const socks = require('socksv5');
+const socks = require('@heroku/socksv5');
 const SOCKS5Server = socks.Server;
 const domain = require('domain');
 
@@ -20,13 +20,16 @@ class SOCKSServer extends SOCKS5Server{
 
 				inbound_socket = outbound_socket = buffer = void(0);
 
-				if (error)
+				if (error) {
 					this.logger.error(`[socks]: an error occured: ${error.message}`)
+				}
 
 				d.exit();
 			};
 
-			if (!inbound_socket) return;
+			if (!inbound_socket) {
+				return;
+			}
 
 			inbound_socket.on('close', onClose);
 			inbound_socket.on('data', onInboundData);	

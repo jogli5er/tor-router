@@ -1,7 +1,7 @@
 const http = require('http');
 const Server = http.Server;
 const domain = require('domain');
-const socks = require('socksv5');
+const socks = require('@heroku/socksv5');
 const URL = require('url');
 const SocksProxyAgent = require('socks-proxy-agent');
 

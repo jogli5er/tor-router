@@ -10,9 +10,9 @@
     "tor-router": "bin/tor-router"
   },
   "scripts": {
-    "start": "bin/tor-router -s -d -j 1",
+    "start": "bin/tor-router -j 100 -s 9000",
     "test": "mocha test/test.js",
-    "debug": "node --inspect-brk bin/tor-router"
+    "debug": "node --inspect-brk bin/tor-router -j 100 -s 9000"
   },
   "devDependencies": {
     "mocha": "^3.2.0",
@@ -21,6 +21,7 @@
     "socks5-http-client": "^1.0.2"
   },
   "dependencies": {
+    "@heroku/socksv5": "0.0.9",
     "async": "^2.1.4",
     "commander": "^2.9.0",
     "eventemitter2": "^3.0.0",
@@ -29,7 +30,6 @@
     "lodash": "^4.17.4",
     "native-dns": "git+https://github.com/znetstar/node-dns.git",
     "socks-proxy-agent": "^3.0.1",
-    "socksv5": "git+https://github.com/lee-elenbaas/socksv5.git",
     "temp": "^0.8.3",
     "winston": "^2.3.1"
   }
