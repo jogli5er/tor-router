@@ -3,7 +3,7 @@ const SOCKS5Server = socks.Server;
 const domain = require('domain');
 
 class SOCKSServer extends SOCKS5Server{
-	constructor(tor_pool, logger) {
+	constructor(tor_pool, logger, nconf) {
 		let handleConnection = (info, accept, deny) => {
 			let d = domain.create();
 
@@ -37,7 +37,7 @@ class SOCKSServer extends SOCKS5Server{
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.info(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port} → ${info.dstAddr}:${info.dstPort}`)
+				logger && logger.verbose(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
 
 				d.on('error', onClose);
 
@@ -82,6 +82,7 @@ class SOCKSServer extends SOCKS5Server{
 		super(handleConnection);
 
 		this.logger = logger;
+		this.nconf = nconf;
 
 		this.useAuth(socks.auth.None());
 	}

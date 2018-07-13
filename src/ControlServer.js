@@ -5,9 +5,10 @@ const HTTPServer = require('./HTTPServer');
 const rpc = require('jrpc2');
 
 class ControlServer {
-	constructor(logger) {
-		this.torPool = this.torPool = new TorPool(null, null, logger);
+	constructor(logger, nconf) {
+		this.torPool = new TorPool(null, null, logger, nconf);
 		this.logger = logger;
+		this.nconf = nconf;
 
 		let server = this.server = new rpc.Server();
 		server.expose('createTorPool', this.createTorPool.bind(this));
@@ -20,13 +21,22 @@ class ControlServer {
 				if (!this.torPool)
 					return reject({ message: 'No pool created' });
 
-				resolve(this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid } )) );		
+				resolve(this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight } )) );		
 			});
 		}).bind(this));
 
 		server.expose('createInstances', (function (instances) {
 			return new Promise((resolve, reject) => {
 				this.torPool.create(instances, (error, instances) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
+		}).bind(this) );
+
+		server.expose('addInstances', (function (instances) {
+			return new Promise((resolve, reject) => {
+				this.torPool.add(instances, (error, instances) => {
 					if (error) reject(error);
 					else resolve();
 				}); 
@@ -42,10 +52,72 @@ class ControlServer {
 			});
 		}).bind(this) );
 
-		server.expose('newIps', (function() {
-			this.torPool.new_ips();
-			return Promise.resolve();
+		server.expose('removeInstanceAt', (function (instance_index) {
+			return new Promise((resolve, reject) => {
+				this.torPool.remove_at(instance_index, (error) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
 		}).bind(this) );
+
+		server.expose('removeInstanceByName', (function (instance_name) {
+			return new Promise((resolve, reject) => {
+				this.torPool.remove_by_name(instance_name, (error) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
+		}).bind(this) );
+
+		server.expose('newIdentites', (function() {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_identites((error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('newIdentityAt', (function(index) {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_identity_at(index, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('newIdentityByName', (function(name) {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_identity_by_name(name, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		/* Begin Deprecated */
+
+		server.expose('newIps', (function() {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_ips((error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('newIpAt', (function(index) {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_ip_at(index, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		/* End Deprecated */
 
 		server.expose('nextInstance', (function () {
 			this.torPool.next();
@@ -57,6 +129,87 @@ class ControlServer {
 			return Promise.resolve();
 		}).bind(this) );
 
+		server.expose('setTorConfig', (function (config) {
+			this.nconf.set('torConfig', config);
+			return Promise.resolve();
+		}).bind(this));
+
+		server.expose('getTorConfig', (function () {
+			return Promise.resolve(this.nconf.get('torConfig'));
+		}).bind(this));
+
+		server.expose('getLoadBalanceMethod', (function () {
+			return Promise.resolve(this.nconf.get('loadBalanceMethod'));
+		}).bind(this));	
+
+		server.expose('setLoadBalanceMethod', (function (loadBalanceMethod) {
+			this.nconf.set('loadBalanceMethod', loadBalanceMethod);
+			return Promise.resolve();
+		}).bind(this));	
+
+		server.expose('getInstanceConfigByName', (function (name, keyword) {
+			return new Promise((resolve, reject) => {
+				this.torPool.get_config_by_name(name, keyword, (error, value) => {
+					if (error) reject(error);
+					else resolve(value);
+				});
+			});
+		}).bind(this));	
+
+		server.expose('getInstanceConfigAt', (function (index, keyword) {
+			return new Promise((resolve, reject) => {
+				this.torPool.get_config_at(index, keyword, (error, value) => {
+					if (error) reject(error);
+					else resolve(value);
+				});
+			});
+		}).bind(this));	
+
+		server.expose('setInstanceConfigByName', (function (name, keyword, value) {
+			return new Promise((resolve, reject) => {
+				this.torPool.set_config_by_name(name, keyword, value, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('setInstanceConfigAt', (function (index, keyword, value) {
+			return new Promise((resolve, reject) => {
+				this.torPool.set_config_at(index, keyword, value, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+
+		server.expose('signalAllInstances', (function (signal) {
+			return new Promise((resolve, reject) => {
+				this.torPool.signal_all(signal, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('signalInstanceAt', (function (index, signal, callback) {
+			return new Promise((resolve, reject) => {
+				this.torPool.signal_at(index, signal, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('signalInstanceByName', (function (name, signal, callback) {
+			return new Promise((resolve, reject) => {
+				this.torPool.signal_by_name(name, signal, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
 	}
 
 	listen(port, callback) {  
@@ -70,13 +223,12 @@ class ControlServer {
 	}
 
 	createTorPool(options) {
-		this.torPool = new TorPool(null, options, this.logger);
-		this.torPool;
+		this.torPool = new TorPool(null, options, this.logger, this.nconf);
 		return Promise.resolve();
 	}
 
 	createSOCKSServer(port) {
-		this.socksServer = new SOCKSServer(this.torPool, this.logger);
+		this.socksServer = new SOCKSServer(this.torPool, this.logger, this.nconf);
 		this.socksServer.listen(port || 9050);
 		this.logger && this.logger.info(`[socks]: Listening on ${port}`);
 		this.socksServer;
@@ -84,7 +236,7 @@ class ControlServer {
 	}
 
 	createHTTPServer(port) {
-		this.httpServer = new HTTPServer(this.torPool, this.logger);
+		this.httpServer = new HTTPServer(this.torPool, this.logger, this.nconf);
 		this.httpServer.listen(port || 9080);
 		this.logger && this.logger.info(`[http]: Listening on ${port}`);
 		this.httpServer;
@@ -92,7 +244,7 @@ class ControlServer {
 	}
 
 	createDNSServer(port) {
-		this.dnsServer = new DNSServer(this.torPool, this.logger);
+		this.dnsServer = new DNSServer(this.torPool, this.logger, this.nconf);
 		this.dnsServer.serve(port || 9053);
 		this.logger && this.logger.info(`[dns]: Listening on ${port}`);
 		this.dnsServer;
