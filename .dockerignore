@@ -1,8 +1,9 @@
 .git
 node_modules
 Dockerfile
-yarn.lock
 npm-debug.log
 docker-compose.yml
 .env
-README.md
+.vscode
+.DS_Store
+docs
