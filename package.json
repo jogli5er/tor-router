@@ -15,7 +15,7 @@
   "scripts": {
     "start": "bin/tor-router -s 9000 -d -j 1",
     "test": "mocha -u tdd --exit test/index.js",
-    "debug": "node --inspect-brk bin/tor-router -j 100 -s 9000",
+    "debug": "export DEBUG=true && node --inspect-brk=0.0.0.0:65101 bin/tor-router -j 100 -s 9000",
     "docs": "grunt docs"
   },
   "devDependencies": {
@@ -25,12 +25,14 @@
     "grunt-jsdoc": "^2.3.0",
     "jsdoc": "^3.5.5",
     "mocha": "^5.2.0",
-    "request": "^2.88.0",
+    "request": "^2.87.0",
     "request-promise": "^4.2.2",
     "requestretry": "^2.0.2",
     "socks-proxy-agent": "^4.0.1"
   },
   "dependencies": {
+    "arrify": "^2.0.1",
+    "async-mutex": "^0.1.4",
     "bluebird": "^3.5.2",
     "del": "^3.0.0",
     "eventemitter3": "^3.1.0",
