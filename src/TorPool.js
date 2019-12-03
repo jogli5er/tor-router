@@ -30,6 +30,7 @@ const WeightedList = require('js-weighted-list');
 const getPort = require('get-port');
 const TorProcess = require('./TorProcess');
 const { Mutex } = require('async-mutex');
+const assert = require('assert');
 
 Promise.promisifyAll(fs);
 
@@ -465,16 +466,33 @@ class TorPool extends EventEmitter {
 		if (typeof(instances) === 'number') {
 			instances = Array.from(Array(instances)).map(() => ({}));
 			const lock = new Mutex();
+			let set = new Set();
 			instances = await Promise.all(instances.map(async(instance) => {
 				instance.ports = {};
+				let set_size = set.size;
 				let release = await lock.acquire();
-				try {
-					instance.ports.dns_port = await getPort();
-					instance.ports.socks_port = await getPort();
-					instance.ports.control_port = await getPort();
-				} finally {
-					release();
+				let retry = true;
+				let retry_count = 0;
+				while (retry && retry_count < 10) {
+					try {
+						instance.ports.dns_port = await getPort();
+						instance.ports.socks_port = await getPort();
+						instance.ports.control_port = await getPort();
+						assert(!(set.has(instance.ports.dns_port) ||
+							set.has(instance.ports.socks_port) ||
+							set.has(instance.ports.control_port)));
+						set.add(instance.ports.dns_port);
+						set.add(instance.ports.socks_port);
+						set.add(instance.ports.control_port);
+						retry = false;
+					} catch(err) {
+						assert(err instanceof assert.AssertionError);
+						retry_count += 1;
+					} finally {
+						release();
+					}
 				}
+				assert(retry_count < 10);
 				return instance;
 			}));
 		}
